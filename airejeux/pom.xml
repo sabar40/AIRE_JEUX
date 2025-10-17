@@ -1,80 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
-	<groupId>projet.polytech</groupId>
-	<artifactId>airejeux</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>airejeux</name>
-	<description>Demo project for Spring Boot</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
-	<properties>
-		<java.version>17</java.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.6</version> <!-- Ou la version de Spring Boot que tu utilises -->
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <groupId>projet.polytech</groupId>
+    <artifactId>airejeux</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>airejeux</name>
+    <description>Demo project for Spring Boot</description>
+    
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+<dependencies>
+    <!-- Spring Boot Starter Web (pour créer une application Web REST) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
-	<repositories>
-		<repository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</pluginRepository>
-	</pluginRepositories>
+    <!-- Spring Boot Starter Data JPA (pour utiliser JPA et Hibernate avec Spring Boot) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- Le Driver MariaDB pour se connecter à MariaDB -->
+   <dependency>
+        <groupId>org.mariadb.jdbc</groupId>
+        <artifactId>mariadb-java-client</artifactId>
+        <version>2.7.3</version> <!-- Assure-toi d'utiliser la dernière version stable -->
+    </dependency>
+
+    <!-- Dépendance pour Hibernate (la gestion des entités JPA) -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>6.6.29.Final</version> <!-- Utilise la dernière version compatible -->
+    </dependency>
+
+
+    <!-- Jakarta Persistence API pour JPA -->
+    <dependency>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <version>3.1.0</version> <!-- Utilise la version appropriée pour Jakarta Persistence -->
+    </dependency>
+
+    <!-- Spring Boot Starter Test (pour les tests unitaires avec Spring Boot) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+
+    <build>
+        <plugins>
+            <!-- Plugin Spring Boot Maven pour la génération du JAR exécutable -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
