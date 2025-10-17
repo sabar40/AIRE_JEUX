@@ -1,10 +1,10 @@
-package com.td1.td1;
+package projet.polytech.airejeux;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class Td1ApplicationTests {
+class AirejeuxApplicationTests {
 
 	@Test
 	void contextLoads() {

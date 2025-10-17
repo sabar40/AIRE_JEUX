@@ -1,13 +1,13 @@
-package com.td1.td1;
+package projet.polytech.airejeux;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Td1Application {
+public class AirejeuxApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Td1Application.class, args);
+		SpringApplication.run(AirejeuxApplication.class, args);
 	}
 
 }
