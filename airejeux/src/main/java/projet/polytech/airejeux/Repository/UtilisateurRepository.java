@@ -1,10 +1,14 @@
 package projet.polytech.airejeux.Repository;
 
-import projet.polytech.airejeux.Entity.Utilisateur;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import projet.polytech.airejeux.Entity.Utilisateur;
+
 @Repository
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> {
-    // Tu peux ajouter des méthodes personnalisées si nécessaire, comme la recherche par mail ou username.
+    Optional<Utilisateur> findByUsername(String username);
 }
+
