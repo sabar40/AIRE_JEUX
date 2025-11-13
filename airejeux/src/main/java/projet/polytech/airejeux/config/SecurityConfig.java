@@ -4,6 +4,7 @@ import projet.polytech.airejeux.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -36,14 +37,26 @@ public class SecurityConfig {
     }
 
     // Définir SecurityFilterChain au lieu de WebSecurityConfigurerAdapter
-    @Bean
+   @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable() // Désactive CSRF
-            .authorizeRequests()
-            .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()  // Accès ouvert pour login et register
-            .anyRequest().authenticated()  // Authentification requise pour toutes les autres requêtes
-            .and()
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);  // Ajoute le filtre JWT
+        http
+            // 1. Désactiver CSRF (la nouvelle façon)
+            .csrf(csrf -> csrf.disable())
+            
+            // 2. Définir la gestion de session sur STATELESS (crucial pour le JWT)
+            .sessionManagement(session -> 
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            
+            // 3. Remplacer "authorizeRequests()" par "authorizeHttpRequests()"
+            .authorizeHttpRequests(auth -> auth
+                // Vos règles (inchangées)
+                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() 
+                .anyRequest().authenticated()
+            )
+            
+            // 4. Ajouter votre filtre (inchangé)
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
