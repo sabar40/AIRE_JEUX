@@ -1,9 +1,12 @@
 package projet.polytech.airejeux.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import projet.polytech.airejeux.Entity.Utilisateur;
 import projet.polytech.airejeux.Repository.UtilisateurRepository;
@@ -15,23 +18,34 @@ import projet.polytech.airejeux.mapper.UserMapper;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UtilisateurRepository utilisateurRepository;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    @Autowired
-    private UtilisateurRepository utilisateurRepository;
-
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    // Injection par constructeur (propre et recommandé)
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UtilisateurRepository utilisateurRepository,
+            JwtService jwtService,
+            PasswordEncoder passwordEncoder,
+            UserMapper userMapper
+    ) {
+        this.authenticationManager = authenticationManager;
+        this.utilisateurRepository = utilisateurRepository;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
+    }
 
     // 🧩 Inscription
     @PostMapping("/register")
     public String register(@RequestBody UserDTO userDTO) {
-        Utilisateur user = UserMapper.toEntity(userDTO);
+
+        Utilisateur user = userMapper.toEntity(userDTO);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         utilisateurRepository.save(user);
         return "Utilisateur enregistré avec succès ✅";
     }
@@ -39,11 +53,17 @@ public class AuthController {
     // 🔐 Connexion
     @PostMapping("/login")
     public String login(@RequestBody UserDTO userDTO) {
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userDTO.getUsername(), userDTO.getPassword())
+                new UsernamePasswordAuthenticationToken(
+                        userDTO.getUsername(),
+                        userDTO.getPassword()
+                )
         );
+
         Utilisateur utilisateur = utilisateurRepository.findByUsername(userDTO.getUsername())
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
         return jwtService.generateToken(utilisateur);
     }
 }
