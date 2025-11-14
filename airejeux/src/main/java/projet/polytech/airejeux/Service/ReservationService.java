@@ -8,14 +8,12 @@ import projet.polytech.airejeux.Entity.Utilisateur;
 import projet.polytech.airejeux.Repository.JeuxRepository;
 import projet.polytech.airejeux.Repository.ReservationRepository;
 import projet.polytech.airejeux.Repository.UtilisateurRepository;
-import projet.polytech.airejeux.dto.ReservationRequestDto; // DTO de requête
+import projet.polytech.airejeux.dto.ReservationRequestDto;
 import projet.polytech.airejeux.dto.ReservationUpdateStatusDto;
-import projet.polytech.airejeux.mapper.ReservationMapper; // Mapper
+import projet.polytech.airejeux.mapper.ReservationMapper;
 import projet.polytech.airejeux.utils.ReservationStatus;
 import jakarta.persistence.EntityNotFoundException;
-
 import java.util.List;
-import java.util.stream.Collectors; // Pour mapper les listes
 
 @Service
 public class ReservationService {
@@ -25,8 +23,12 @@ public class ReservationService {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
     @Autowired
-    private JeuxRepository jeuxRepository; 
+    private JeuxRepository jeuxRepository;
+    
+    @Autowired
+    private ReservationMapper reservationMapper; // <-- INJECTION DU MAPPER
 
+    // CREATE
     @Transactional
     public Reservation createReservation(ReservationRequestDto dto, String username) {
         Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
@@ -36,13 +38,13 @@ public class ReservationService {
             throw new EntityNotFoundException("Jeu non trouvé avec l'id : " + dto.getJeuxId());
         }
 
-        // Utilisation du Mapper pour créer l'entité
-        Reservation reservation = ReservationMapper.toEntity(dto, utilisateur);
+        // 1. MapStruct convertit le DTO
+        Reservation reservation = reservationMapper.toEntity(dto);
         
-        // Logique métier : le service définit le statut
-        reservation.setStatus(ReservationStatus.PENDING); 
-
-        reservation.setReservation(0);
+        // 2. On définit manuellement les champs que MapStruct a ignorés
+        reservation.setUtilisateur(utilisateur);
+        reservation.setStatus(ReservationStatus.PENDING);
+        reservation.setReservation(0); // Pour le bug "cannot be null"
 
         return reservationRepository.save(reservation);
     }

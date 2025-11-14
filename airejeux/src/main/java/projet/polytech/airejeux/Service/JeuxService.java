@@ -18,10 +18,14 @@ public class JeuxService {
 
     @Autowired
     private JeuxRepository jeuxRepository;
-
     @Autowired
-    private ReservationRepository reservationRepository; // Indispensable pour le DELETE
+    private ReservationRepository reservationRepository;
+    
+    @Autowired
+    private JeuxMapper jeuxMapper; // Injection du Mapper
 
+    // --- CES MÉTHODES MANQUAIENT PROBABLEMENT ---
+    
     // READ (Tous les jeux)
     public List<Jeux> getAllJeux() {
         return jeuxRepository.findAll();
@@ -32,28 +36,25 @@ public class JeuxService {
         return jeuxRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Jeu non trouvé avec l'id : " + id));
     }
+    // --- FIN DES MÉTHODES MANQUANTES ---
 
     // CREATE
     @Transactional
     public Jeux createJeu(JeuxRequestDto dto) {
-        // Le mapper prépare l'objet
-        Jeux jeu = JeuxMapper.toEntity(dto);
-        // Le service sauvegarde (CascadeType.ALL sauvegardera aussi les coordonnées)
+        Jeux jeu = jeuxMapper.toEntity(dto);
         return jeuxRepository.save(jeu);
     }
 
     // UPDATE
     @Transactional
     public Jeux updateJeu(Long id, JeuxRequestDto dto) {
-        // 1. Trouver le jeu existant
-        Jeux jeuExistant = getJeuById(id);
-
-        // 2. Mettre à jour les champs simples
+        // Appelle la méthode getJeuById de CETTE classe
+        Jeux jeuExistant = this.getJeuById(id); 
+        
         jeuExistant.setNom(dto.getNom());
         jeuExistant.setQuantite(dto.getQuantite());
         jeuExistant.setDescription(dto.getDescription());
-
-        // 3. Mettre à jour les coordonnées
+        
         Coordonnees coordonneesExistantes = jeuExistant.getCoordonnees();
         if (coordonneesExistantes == null) {
             coordonneesExistantes = new Coordonnees();
@@ -61,26 +62,18 @@ public class JeuxService {
         coordonneesExistantes.setLatitude(dto.getCoordonnees().getLatitude());
         coordonneesExistantes.setLongitude(dto.getCoordonnees().getLongitude());
         jeuExistant.setCoordonnees(coordonneesExistantes);
-        
+
         return jeuxRepository.save(jeuExistant);
     }
 
     // DELETE
     @Transactional
     public void deleteJeu(Long id) {
-        // 1. VÉRIFICATION DE SÉCURITÉ : Y a-t-il des réservations pour ce jeu ?
-        // (On utilise la méthode qu'on avait ajoutée au ReservationRepository)
         if (reservationRepository.existsByJeuxId(id)) {
-            // Si oui, on bloque la suppression.
             throw new IllegalStateException("Impossible de supprimer le jeu: Des réservations existent pour ce jeu.");
         }
-
-        // 2. Trouver le jeu (si on est ici, aucune réservation n'existe)
-        Jeux jeu = getJeuById(id);
-
-        // 3. Supprimer le jeu.
-        // (Grâce à CascadeType.ALL et orphanRemoval=true sur l'entité Jeux,
-        // les coordonnées associées seront aussi supprimées)
+        // Appelle la méthode getJeuById de CETTE classe
+        Jeux jeu = this.getJeuById(id); 
         jeuxRepository.delete(jeu);
     }
 }
