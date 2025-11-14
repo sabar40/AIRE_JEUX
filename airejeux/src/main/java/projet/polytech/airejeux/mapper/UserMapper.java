@@ -1,29 +1,20 @@
 package projet.polytech.airejeux.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 import projet.polytech.airejeux.Entity.Utilisateur;
 import projet.polytech.airejeux.dto.UserDTO;
 
+@Mapper(componentModel = "spring") 
+public interface UserMapper {
 
-public class UserMapper {
+    UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    public static Utilisateur toEntity(UserDTO dto) {
-        Utilisateur user = new Utilisateur();
-        user.setUsername(dto.getUsername());
-        user.setPassword(dto.getPassword());
-        user.setNom(dto.getNom());
-        user.setPrenom(dto.getPrenom());
-        user.setMail(dto.getMail());
-        user.setRole(dto.getRole() != null ? dto.getRole() : "USER"); // rôle par défaut
-        return user;
-    }
+    // DTO → Entity
+    @Mapping(target = "role", defaultValue = "USER")
+    Utilisateur toEntity(UserDTO dto);
 
-    public static UserDTO toDTO(Utilisateur user) {
-        UserDTO dto = new UserDTO();
-        dto.setUsername(user.getUsername());
-        dto.setNom(user.getNom());
-        dto.setPrenom(user.getPrenom());
-        dto.setMail(user.getMail());
-        dto.setRole(user.getRole());
-        return dto;
-    }
+    // Entity → DTO
+    UserDTO toDTO(Utilisateur user);
 }

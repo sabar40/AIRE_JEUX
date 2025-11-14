@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,71 +24,76 @@ import projet.polytech.airejeux.mapper.UserMapper;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private UtilisateurService utilisateurService;
+    private final UtilisateurService utilisateurService;
+    private final UserMapper userMapper;
+
+    // Injection par constructeur (propre et recommandé)
+    public UserController(UtilisateurService utilisateurService, UserMapper userMapper) {
+        this.utilisateurService = utilisateurService;
+        this.userMapper = userMapper;
+    }
 
     // Création d'un utilisateur
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        // Convertir UserDTO en Utilisateur
-        Utilisateur user = UserMapper.toEntity(userDTO);
+
+        Utilisateur user = userMapper.toEntity(userDTO);
         Utilisateur savedUser = utilisateurService.createUser(user);
-        
-        // Convertir Utilisateur en UserDTO pour le retour
-        UserDTO savedUserDTO = UserMapper.toDTO(savedUser);
+
+        UserDTO savedUserDTO = userMapper.toDTO(savedUser);
         return new ResponseEntity<>(savedUserDTO, HttpStatus.CREATED);
     }
 
-    // Récupérer un utilisateur par son ID
+    // Récupérer un utilisateur par ID
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        Optional<Utilisateur> user = utilisateurService.getUserById(id);
-        if (user.isPresent()) {
-            // Convertir Utilisateur en UserDTO
-            UserDTO userDTO = UserMapper.toDTO(user.get());
-            return ResponseEntity.ok(userDTO);
-        }
-        return ResponseEntity.notFound().build();
+
+        return utilisateurService.getUserById(id)
+                .map(userMapper::toDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // Récupérer tous les utilisateurs
     @GetMapping
     public List<UserDTO> getAllUsers() {
         return utilisateurService.getAllUsers().stream()
-                .map(UserMapper::toDTO)
+                .map(userMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     // Mise à jour d'un utilisateur
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+
         Optional<Utilisateur> existingUser = utilisateurService.getUserById(id);
-        if (existingUser.isPresent()) {
-            Utilisateur userToUpdate = existingUser.get();
-            userToUpdate.setUsername(userDTO.getUsername());
-            userToUpdate.setPassword(userDTO.getPassword());
-            userToUpdate.setNom(userDTO.getNom());
-            userToUpdate.setPrenom(userDTO.getPrenom());
-            userToUpdate.setMail(userDTO.getMail());
-            userToUpdate.setRole(userDTO.getRole());
-            
-            Utilisateur updatedUser = utilisateurService.updateUser(id, userToUpdate);
-            
-            // Convertir Utilisateur en UserDTO pour le retour
-            UserDTO updatedUserDTO = UserMapper.toDTO(updatedUser);
-            return ResponseEntity.ok(updatedUserDTO);
+
+        if (existingUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        Utilisateur user = existingUser.get();
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(userDTO.getPassword());
+        user.setNom(userDTO.getNom());
+        user.setPrenom(userDTO.getPrenom());
+        user.setMail(userDTO.getMail());
+        user.setRole(userDTO.getRole());
+
+        Utilisateur updatedUser = utilisateurService.updateUser(id, user);
+
+        return ResponseEntity.ok(userMapper.toDTO(updatedUser));
     }
 
     // Suppression d'un utilisateur
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        Optional<Utilisateur> user = utilisateurService.getUserById(id);
-        if (user.isPresent()) {
-            utilisateurService.deleteUser(id);
-            return ResponseEntity.noContent().build();
+
+        if (utilisateurService.getUserById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        utilisateurService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }
