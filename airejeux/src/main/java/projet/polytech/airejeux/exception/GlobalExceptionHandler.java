@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
@@ -114,6 +115,78 @@ public class GlobalExceptionHandler {
         HttpStatus.UNAUTHORIZED.value(),
         HttpStatus.UNAUTHORIZED.getReasonPhrase(),
         ex.getMessage() != null ? ex.getMessage() : "Authentification requise ou credentials invalides",
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+  }
+
+  /**
+   * Gère les exceptions d'accès interdit (403)
+   */
+  @ExceptionHandler({ ForbiddenException.class, AccessDeniedException.class })
+  public ResponseEntity<ErrorResponse> handleForbiddenException(
+      Exception ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.FORBIDDEN.value(),
+        HttpStatus.FORBIDDEN.getReasonPhrase(),
+        ex.getMessage() != null ? ex.getMessage() : "Accès interdit : permissions insuffisantes",
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+  }
+
+  /**
+   * Gère les exceptions de conflit (409)
+   */
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ErrorResponse> handleConflictException(
+      ConflictException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.CONFLICT.value(),
+        HttpStatus.CONFLICT.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
+  /**
+   * Gère les exceptions de ressource dupliquée (409)
+   */
+  @ExceptionHandler(DuplicateResourceException.class)
+  public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+      DuplicateResourceException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.CONFLICT.value(),
+        HttpStatus.CONFLICT.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
+
+  /**
+   * Gère les exceptions de token invalide (401)
+   */
+  @ExceptionHandler(InvalidTokenException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidTokenException(
+      InvalidTokenException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.UNAUTHORIZED.value(),
+        HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+        ex.getMessage(),
         request.getRequestURI());
 
     return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
