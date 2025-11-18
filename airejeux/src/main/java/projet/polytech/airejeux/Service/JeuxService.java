@@ -8,8 +8,9 @@ import projet.polytech.airejeux.Entity.Jeux;
 import projet.polytech.airejeux.Repository.JeuxRepository;
 import projet.polytech.airejeux.Repository.ReservationRepository;
 import projet.polytech.airejeux.dto.JeuxRequestDto;
+import projet.polytech.airejeux.exception.ConflictException;
+import projet.polytech.airejeux.exception.ResourceNotFoundException;
 import projet.polytech.airejeux.mapper.JeuxMapper;
-import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class JeuxService {
     // READ (Un jeu par ID)
     public Jeux getJeuById(Long id) {
         return jeuxRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Jeu non trouvé avec l'id : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Jeux", "id", id));
     }
 
     // CREATE
@@ -61,7 +62,7 @@ public class JeuxService {
         coordonneesExistantes.setLatitude(dto.getCoordonnees().getLatitude());
         coordonneesExistantes.setLongitude(dto.getCoordonnees().getLongitude());
         jeuExistant.setCoordonnees(coordonneesExistantes);
-        
+
         return jeuxRepository.save(jeuExistant);
     }
 
@@ -72,7 +73,8 @@ public class JeuxService {
         // (On utilise la méthode qu'on avait ajoutée au ReservationRepository)
         if (reservationRepository.existsByJeuxId(id)) {
             // Si oui, on bloque la suppression.
-            throw new IllegalStateException("Impossible de supprimer le jeu: Des réservations existent pour ce jeu.");
+            throw new ConflictException(
+                    "Impossible de supprimer le jeu: Des réservations actives existent pour ce jeu.");
         }
 
         // 2. Trouver le jeu (si on est ici, aucune réservation n'existe)

@@ -25,31 +25,40 @@ public class JwtFilter implements Filter {
     private JwtService jwtService;
 
     @Override
-    public void doFilter(jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response, FilterChain chain)
+    public void doFilter(jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response,
+            FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Récupérer le token dans les headers de la requête
-        String token = httpRequest.getHeader("Authorization");
+        try {
+            // Récupérer le token dans les headers de la requête
+            String token = httpRequest.getHeader("Authorization");
 
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);  // Retirer "Bearer " du token
-            String username = jwtService.extractUsername(token);
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7); // Retirer "Bearer " du token
+                String username = jwtService.extractUsername(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Valider et configurer l'authentification utilisateur
-                if (jwtService.validateToken(token, username)) {
-                    // Créer et remplir l'authentification
-                    SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>())
-                    );
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // Valider et configurer l'authentification utilisateur
+                    if (jwtService.validateToken(token, username)) {
+                        // Créer et remplir l'authentification
+                        SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>()));
+                    }
                 }
             }
-        }
 
-        // Continuer avec la chaîne de filtres
-        chain.doFilter(httpRequest, httpResponse);
+            // Continuer avec la chaîne de filtres
+            chain.doFilter(httpRequest, httpResponse);
+        } catch (io.jsonwebtoken.MalformedJwtException | io.jsonwebtoken.ExpiredJwtException
+                | io.jsonwebtoken.UnsupportedJwtException | io.jsonwebtoken.security.SignatureException e) {
+            // Token invalide/expiré/malformé : on laisse simplement passer sans
+            // authentifier
+            // La requête arrivera au controller sans authentification et Spring Security
+            // bloquera si nécessaire
+            chain.doFilter(httpRequest, httpResponse);
+        }
     }
 
     @Override

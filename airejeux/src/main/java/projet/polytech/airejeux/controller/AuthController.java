@@ -12,6 +12,8 @@ import projet.polytech.airejeux.Entity.Utilisateur;
 import projet.polytech.airejeux.Repository.UtilisateurRepository;
 import projet.polytech.airejeux.Service.JwtService;
 import projet.polytech.airejeux.dto.UserDTO;
+import projet.polytech.airejeux.exception.DuplicateResourceException;
+import projet.polytech.airejeux.exception.UnauthorizedException;
 import projet.polytech.airejeux.mapper.UserMapper;
 
 @RestController
@@ -30,8 +32,7 @@ public class AuthController {
             UtilisateurRepository utilisateurRepository,
             JwtService jwtService,
             PasswordEncoder passwordEncoder,
-            UserMapper userMapper
-    ) {
+            UserMapper userMapper) {
         this.authenticationManager = authenticationManager;
         this.utilisateurRepository = utilisateurRepository;
         this.jwtService = jwtService;
@@ -42,6 +43,11 @@ public class AuthController {
     // 🧩 Inscription
     @PostMapping("/register")
     public String register(@RequestBody UserDTO userDTO) {
+
+        // Vérifier si le username existe déjà
+        if (utilisateurRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            throw new DuplicateResourceException("Utilisateur", "username", userDTO.getUsername());
+        }
 
         Utilisateur user = userMapper.toEntity(userDTO);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -54,15 +60,17 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestBody UserDTO userDTO) {
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        userDTO.getUsername(),
-                        userDTO.getPassword()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            userDTO.getUsername(),
+                            userDTO.getPassword()));
+        } catch (Exception e) {
+            throw new UnauthorizedException("Nom d'utilisateur ou mot de passe incorrect");
+        }
 
         Utilisateur utilisateur = utilisateurRepository.findByUsername(userDTO.getUsername())
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new UnauthorizedException("Utilisateur non trouvé"));
 
         return jwtService.generateToken(utilisateur);
     }
