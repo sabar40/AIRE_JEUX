@@ -4,6 +4,10 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import projet.polytech.airejeux.dto.ErrorResponse;
@@ -71,6 +75,48 @@ public class GlobalExceptionHandler {
         request.getRequestURI());
 
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Gère les erreurs de validation des DTOs (400)
+   * Levée automatiquement par @Valid sur les @RequestBody
+   */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidationException(
+      MethodArgumentNotValidException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        "Erreur de validation des données",
+        request.getRequestURI());
+
+    // Ajouter les erreurs de validation
+    for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+      error.addValidationError(fieldError.getField(), fieldError.getDefaultMessage());
+    }
+
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Gère les exceptions d'authentification (401)
+   */
+  @ExceptionHandler({ UnauthorizedException.class, AuthenticationException.class, BadCredentialsException.class })
+  public ResponseEntity<ErrorResponse> handleUnauthorizedException(
+      Exception ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.UNAUTHORIZED.value(),
+        HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+        ex.getMessage() != null ? ex.getMessage() : "Authentification requise ou credentials invalides",
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
   }
 
   
