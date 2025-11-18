@@ -271,5 +271,44 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }
 
-  
+  /**
+   * Gère les SecurityException (403)
+   * Utilisées dans le code existant pour les erreurs d'accès
+   */
+  @ExceptionHandler(SecurityException.class)
+  public ResponseEntity<ErrorResponse> handleSecurityException(
+      SecurityException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.FORBIDDEN.value(),
+        HttpStatus.FORBIDDEN.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+  }
+
+  /**
+   * Gère toutes les autres exceptions non prévues (500)
+   * Filet de sécurité pour éviter d'exposer les détails internes
+   */
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponse> handleGlobalException(
+      Exception ex,
+      HttpServletRequest request) {
+
+    // Log l'erreur pour le debug (à configurer avec un logger)
+    ex.printStackTrace();
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+        "Une erreur interne s'est produite. Veuillez contacter l'administrateur.",
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
