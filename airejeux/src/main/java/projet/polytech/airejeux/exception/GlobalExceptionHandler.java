@@ -2,6 +2,8 @@ package projet.polytech.airejeux.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +25,8 @@ import java.time.LocalDateTime;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   /**
    * Gère les exceptions de ressource non trouvée (404)
@@ -299,8 +303,8 @@ public class GlobalExceptionHandler {
       Exception ex,
       HttpServletRequest request) {
 
-    // Log l'erreur pour le debug (à configurer avec un logger)
-    ex.printStackTrace();
+    // Log l'erreur pour le debug (meilleure pratique qu'un printStackTrace)
+    log.error("Erreur inattendue interceptée : {}", ex.getMessage(), ex);
 
     ErrorResponse error = new ErrorResponse(
         LocalDateTime.now(),
