@@ -1,145 +1,432 @@
-# AIRE_JEUX
+# AIRE_JEUX - API de Gestion des Jeux et Réservations
 
-#1. API : Authentification (Login / Register)
-1.1 Login - POST /api/auth/login
+API REST pour la gestion d'une aire de jeux permettant aux utilisateurs de consulter les équipements disponibles et de créer des réservations.
 
-Description : Cette API permet à un utilisateur de se connecter à l'application en envoyant son nom d'utilisateur et son mot de passe. Si l'utilisateur est authentifié avec succès, un JWT (JSON Web Token) est généré et renvoyé pour l'utilisateur.
+## 📋 Table des matières
 
-Méthode HTTP : POST
+- [Fonctionnalités](#-fonctionnalités)
+- [Architecture](#-architecture)
+- [Technologies](#-technologies)
+- [Prérequis](#-prérequis)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Utilisation](#-utilisation)
+- [API Endpoints](#-api-endpoints)
+- [Gestion des erreurs](#-gestion-des-erreurs)
+- [Tests](#-tests)
+- [Structure du projet](#-structure-du-projet)
+- [Sécurité](#-sécurité)
+- [Contributeurs](#-contributeurs)
 
-Endpoint : /api/auth/login
+## ✨ Fonctionnalités
 
-Request Body :
+### 🔐 Authentification & Autorisation
+- ✅ Inscription et connexion des utilisateurs
+- ✅ Authentification JWT (JSON Web Token)
+- ✅ Gestion des rôles (`USER`, `ADMIN`)
+- ✅ Sécurisation des endpoints avec Spring Security
 
+### 🎯 Gestion des Jeux
+- ✅ CRUD complet des équipements de jeux
+- ✅ Localisation GPS (coordonnées géographiques)
+- ✅ Accès public en lecture, modification réservée aux admins
+
+### 📅 Système de Réservations
+- ✅ Création de réservations par les utilisateurs
+- ✅ Workflow de validation : `PENDING` → `APPROVED` / `REJECTED` / `CANCELLED`
+- ✅ Gestion des conflits (impossible de supprimer un jeu avec réservations actives)
+- ✅ Historique des réservations par utilisateur
+
+### 🛡️ Gestion des Exceptions
+- ✅ Handler global centralisé (`@RestControllerAdvice`)
+- ✅ Réponses d'erreur standardisées (format JSON uniforme)
+- ✅ Codes HTTP appropriés (404, 401, 403, 409, 500, etc.)
+- ✅ Logging des erreurs avec SLF4J
+
+## ��️ Architecture
+
+\`\`\`
+┌─────────────┐
+│   Client    │
+└──────┬──────┘
+       │ HTTP/JSON + JWT
+       ▼
+┌─────────────────────────────────────┐
+│         Controllers                  │
+│  (AuthController, JeuxController,   │
+│   ReservationController, etc.)      │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│      Security Layer                  │
+│  (JwtFilter, SecurityConfig)        │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│         Services                     │
+│  (JeuxService, ReservationService,  │
+│   UtilisateurService)               │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│       Repositories (JPA)            │
+│  (JeuxRepository, etc.)             │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│      MariaDB Database               │
+│  (Tables: utilisateur, jeux,        │
+│   coordonnees, reservation)         │
+└─────────────────────────────────────┘
+\`\`\`
+
+### Pattern : Clean Architecture
+- **Controllers** : Gestion des requêtes HTTP
+- **Services** : Logique métier
+- **Repositories** : Accès aux données
+- **DTOs** : Transfert de données entre couches
+- **Mappers** : Conversion Entity ↔ DTO (MapStruct)
+
+## 🛠️ Technologies
+
+### Backend
+- **Java 17** - Langage de programmation
+- **Spring Boot 3.5.6** - Framework principal
+- **Spring Security** - Authentification et autorisation
+- **Spring Data JPA** - ORM et accès aux données
+- **Hibernate** - Implémentation JPA
+
+### Sécurité
+- **JWT (jjwt 0.11.5)** - Tokens d'authentification
+- **BCrypt** - Hachage des mots de passe
+
+### Base de données
+- **MariaDB** - SGBD relationnel
+- **HikariCP** - Pool de connexions
+
+### Mapping & Validation
+- **MapStruct 1.5.5** - Mapping automatique Entity/DTO
+- **Lombok** - Réduction du boilerplate
+
+### Build & Tests
+- **Maven** - Gestion des dépendances
+- **JUnit 5** - Tests unitaires
+- **Mockito** - Framework de mocking
+
+## 📦 Prérequis
+
+- **Java Development Kit (JDK) 17+**
+- **Maven 3.6+**
+- **MariaDB 10.5+** (ou MySQL 8.0+)
+- **Git**
+
+## 🚀 Installation
+
+### 1. Cloner le repository
+
+\`\`\`bash
+git clone https://github.com/sabar40/AIRE_JEUX.git
+cd AIRE_JEUX/airejeux
+\`\`\`
+
+### 2. Configurer la base de données
+
+\`\`\`bash
+# Se connecter à MariaDB
+sudo mysql -u root -p
+
+# Créer la base de données
+CREATE DATABASE AireJeux CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# Créer un utilisateur (optionnel)
+CREATE USER 'airejeux_user'@'localhost' IDENTIFIED BY 'votre_mot_de_passe';
+GRANT ALL PRIVILEGES ON AireJeux.* TO 'airejeux_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+\`\`\`
+
+### 3. Importer le schéma de la base de données
+
+\`\`\`bash
+mysql -u root -p AireJeux < src/main/resources/airejeux_structure_complete.sql
+\`\`\`
+
+### 4. Configurer l'application
+
+Modifier `src/main/resources/application.properties` :
+
+\`\`\`properties
+# Base de données
+spring.datasource.url=jdbc:mariadb://localhost:3306/AireJeux
+spring.datasource.username=root
+spring.datasource.password=votre_mot_de_passe
+
+# JWT Secret (IMPORTANT : Changer en production !)
+jwt.secret=VotreCleSecreteTresLongueEtComplexePourLaProduction123456789
+jwt.expiration=3600000
+\`\`\`
+
+### 5. Compiler et lancer l'application
+
+\`\`\`bash
+# Compiler le projet
+./mvnw clean compile
+
+# Lancer l'application
+./mvnw spring-boot:run
+\`\`\`
+
+L'API sera accessible sur : **http://localhost:8080**
+
+
+## 📖 Utilisation
+
+### Workflow typique
+
+1. **S'inscrire** (POST `/api/auth/register`)
+2. **Se connecter** (POST `/api/auth/login`) → Récupérer le JWT
+3. **Consulter les jeux** (GET `/api/jeux`) - Public
+4. **Créer une réservation** (POST `/api/reservations`) - Authentifié
+5. **Admin approuve** (PUT `/api/reservations/{id}/status`) - Admin uniquement
+
+### Exemple avec curl
+
+```bash
+# 1. Inscription
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "password": "SecurePass123",
+    "nom": "Doe",
+    "prenom": "John",
+    "mail": "john@example.com",
+    "role": "USER"
+  }'
+
+# 2. Connexion (récupérer le token)
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "password": "SecurePass123"
+  }')
+
+# 3. Consulter les jeux
+curl -X GET http://localhost:8080/api/jeux \
+  -H "Authorization: Bearer $TOKEN"
+
+# 4. Créer une réservation
+curl -X POST http://localhost:8080/api/reservations \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jeuxId": 1,
+    "utilisateurId": 1,
+    "dateDebut": "2025-12-01T10:00:00",
+    "dateFin": "2025-12-01T12:00:00"
+  }'
+```
+
+## 🌐 API Endpoints
+
+### 🔐 Authentification
+
+| Méthode | Endpoint | Description | Auth |
+|---------|----------|-------------|------|
+| POST | `/api/auth/register` | Inscription d'un utilisateur | Public |
+| POST | `/api/auth/login` | Connexion (retourne JWT) | Public |
+
+### 🎮 Jeux
+
+| Méthode | Endpoint | Description | Auth |
+|---------|----------|-------------|------|
+| GET | `/api/jeux` | Liste tous les jeux | Public |
+| GET | `/api/jeux/{id}` | Récupère un jeu par ID | Public |
+| POST | `/api/jeux` | Crée un nouveau jeu | ADMIN |
+| PUT | `/api/jeux/{id}` | Modifie un jeu | ADMIN |
+| DELETE | `/api/jeux/{id}` | Supprime un jeu | ADMIN |
+
+### 📅 Réservations
+
+| Méthode | Endpoint | Description | Auth |
+|---------|----------|-------------|------|
+| GET | `/api/reservations` | Liste toutes les réservations | ADMIN |
+| GET | `/api/reservations/{id}` | Détails d'une réservation | USER |
+| GET | `/api/reservations/user/{userId}` | Réservations d'un utilisateur | USER |
+| POST | `/api/reservations` | Crée une réservation | USER |
+| PUT | `/api/reservations/{id}/status` | Change le statut | ADMIN |
+| DELETE | `/api/reservations/{id}` | Annule une réservation | USER/ADMIN |
+
+### 👤 Utilisateurs
+
+| Méthode | Endpoint | Description | Auth |
+|---------|----------|-------------|------|
+| GET | `/api/users` | Liste tous les utilisateurs | ADMIN |
+| GET | `/api/users/{id}` | Récupère un utilisateur | USER |
+| PUT | `/api/users/{id}` | Modifie un utilisateur | USER/ADMIN |
+| DELETE | `/api/users/{id}` | Supprime un utilisateur | ADMIN |
+
+## 🚨 Gestion des erreurs
+
+L'API utilise un système centralisé de gestion des exceptions avec des réponses standardisées.
+
+### Format de réponse d'erreur
+
+```json
 {
-  "username": "utilisateur1",
-  "password": "motdepasse"
+  "timestamp": "2025-11-18T12:53:36",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Jeux avec id '999' introuvable",
+  "path": "/api/jeux/999",
+  "validationErrors": []
 }
+```
 
-Réponse :
+### Codes HTTP
 
-200 OK si l'authentification est réussie. Le token JWT est retourné.
+| Code | Signification | Exemple |
+|------|--------------|---------|
+| 200 | Succès | Opération réussie |
+| 400 | Bad Request | Données invalides |
+| 401 | Unauthorized | Token manquant/invalide |
+| 403 | Forbidden | Permissions insuffisantes |
+| 404 | Not Found | Ressource introuvable |
+| 409 | Conflict | Conflit métier (duplication, etc.) |
+| 500 | Internal Server Error | Erreur serveur |
 
-401 Unauthorized si l'authentification échoue.
+### Exceptions personnalisées
 
-Exemple de réponse :
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...:token
+- `ResourceNotFoundException` (404)
+- `BadRequestException` (400)
+- `UnauthorizedException` (401)
+- `ForbiddenException` (403)
+- `ConflictException` (409)
+- `DuplicateResourceException` (409)
+- `InvalidTokenException` (401)
+- `ReservationException` (400)
 
+## 🧪 Tests
 
-1.2 Register - POST /api/auth/register
+### Tests unitaires
 
-Description : Cette API permet d'enregistrer un nouvel utilisateur. Les informations comme le nom, le prénom, l'email, le mot de passe, etc., sont envoyées pour créer un nouvel utilisateur.
+```bash
+# Exécuter tous les tests
+./mvnw test
 
-Méthode HTTP : POST
+# Exécuter les tests d'un fichier spécifique
+./mvnw test -Dtest=GlobalExceptionHandlerTest
 
-Endpoint : /api/auth/register
+# Tests avec couverture
+./mvnw test jacoco:report
+```
 
-Request Body :
+### Tests d'intégration (avec BD)
 
-{
-  "username": "newUser",
-  "password": "newPassword123",
-  "nom": "...",
-  "prenom": "...",
-  "mail": "....@example.com",
-  "role": "USER"
-}
-Réponse :
+```bash
+# Script de tests curl
+chmod +x test-exceptions.sh
+./test-exceptions.sh
+```
 
-201 Created si l'utilisateur est créé avec succès.
+### Résultats attendus
 
-400 Bad Request si les données sont invalides
+```
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS ✅
+```
 
-#2. API : CRUD Utilisateur
-2.1 Créer un utilisateur - POST /api/users
+## 📁 Structure du projet
 
-Description : Cette API permet de créer un nouvel utilisateur dans la base de données en utilisant un UserDTO.
+```
+airejeux/
+├── src/
+│   ├── main/
+│   │   ├── java/projet/polytech/airejeux/
+│   │   │   ├── config/              # Configuration (SecurityConfig)
+│   │   │   ├── controller/          # Contrôleurs REST
+│   │   │   ├── dto/                 # Data Transfer Objects
+│   │   │   ├── Entity/              # Entités JPA
+│   │   │   ├── exception/           # Exceptions personnalisées
+│   │   │   ├── mapper/              # Mappers MapStruct
+│   │   │   ├── Repository/          # Interfaces JPA
+│   │   │   ├── security/            # JWT Filter
+│   │   │   ├── Service/             # Logique métier
+│   │   │   ├── utils/               # Classes utilitaires
+│   │   │   └── AirejeuxApplication.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── airejeux_structure_complete.sql
+│   └── test/
+│       └── java/projet/polytech/airejeux/
+│           ├── exception/           # Tests des exceptions
+│           └── AirejeuxApplicationTests.java
+├── target/                          # Build artifacts
+├── .gitignore
+├── pom.xml                          # Configuration Maven
+├── README.md
+└── test-exceptions.sh               # Script de tests curl
+```
 
-Méthode HTTP : POST
+## 🔒 Sécurité
 
-Endpoint : /api/users
+### Bonnes pratiques implémentées
 
-Request Body :
-{
-  "username": "johnDoe",
-  "password": "password123",
-  "nom": "Doe",
-  "prenom": "John",
-  "mail": "john.doe@example.com",
-  "role": "USER"
-}
-{
-  "username": "...",
-  "password": "password123",
-  "nom": "...",
-  "prenom": ",,,,",
-  "mail": "....@example.com",
-  "role": "USER"
-}
+✅ Hachage BCrypt des mots de passe  
+✅ Authentification JWT stateless  
+✅ Validation des entrées utilisateur  
+✅ Gestion des rôles (RBAC)  
+✅ Protection CSRF désactivée (API REST)  
+✅ Gestion centralisée des exceptions  
 
+## 📊 Modèle de données
 
-    Réponse :
+### Entités principales
 
-        201 Created si l'utilisateur est créé avec succès.
+```
+Utilisateur (utilisateur)
+├── id: Long (PK)
+├── username: String (unique)
+├── password: String (hashed)
+├── nom: String
+├── prenom: String
+├── mail: String
+└── role: String (USER/ADMIN)
 
-        400 Bad Request si les données envoyées sont incorrectes.
+Jeux (jeux)
+├── id: Long (PK)
+├── nom: String
+├── type: String
+├── description: String
+└── coordonnees_id: Long (FK → Coordonnees)
 
-2.2 Récupérer un utilisateur par ID - GET /api/users/{id}
+Coordonnees (coordonnees)
+├── id: Long (PK)
+├── latitude: Double
+└── longitude: Double
 
-Description : Cette API permet de récupérer les informations d'un utilisateur spécifique en utilisant son ID.
+Reservation (reservation)
+├── id: Long (PK)
+├── jeux_id: Long (FK → Jeux)
+├── utilisateur_id: Long (FK → Utilisateur)
+├── dateDebut: DateTime
+├── dateFin: DateTime
+└── status: String (PENDING/APPROVED/REJECTED/CANCELLED)
+```
 
-Méthode HTTP : GET
+### Relations
 
-Endpoint : /api/users/{id}
+- `Jeux` ↔ `Coordonnees` : OneToOne
+- `Reservation` → `Jeux` : ManyToOne
+- `Reservation` → `Utilisateur` : ManyToOne
 
-Réponse :
+## 📄 License
 
-200 OK si l'utilisateur est trouvé.
+Ce projet est sous licence MIT.
 
-404 Not Found si l'utilisateur avec l'ID donné n'existe pas.
-
-
-2.3 Récupérer tous les utilisateurs - GET /api/users
-
-Description : Cette API permet de récupérer tous les utilisateurs de l'application.
-
-Méthode HTTP : GET
-
-Endpoint : /api/users
-
-Réponse :
-
-200 OK avec la liste des utilisateurs.
-
-
-2.4 Mettre à jour un utilisateur - PUT /api/users/{id}
-
-Description : Cette API permet de mettre à jour les informations d'un utilisateur existant en utilisant son ID.
-
-Méthode HTTP : PUT
-
-Endpoint : /api/users/{id}
-
-
-
-2.5 Supprimer un utilisateur
-Route : DELETE /api/users/{id}
-Description :
-
-Cette route permet de supprimer un utilisateur spécifique en utilisant son ID.
-
-Requête :
-
-Méthode HTTP : DELETE
-
-URL : /api/users/{id}
-
-Paramètre :
-
-{id} : L'ID de l'utilisateur que tu souhaites supprimer.
-
-Réponse :
-
-Code de statut HTTP : 204 No Content (si l'utilisateur est supprimé avec succès) ou 404 Not Found (si l'utilisateur n'existe pas)
-
-Corps de la réponse : Aucun contenu, car la ressource a été supprimée.
+---
