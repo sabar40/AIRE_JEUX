@@ -10,12 +10,14 @@ import projet.polytech.airejeux.Repository.ReservationRepository;
 import projet.polytech.airejeux.Repository.UtilisateurRepository;
 import projet.polytech.airejeux.dto.ReservationRequestDto; // DTO de requête
 import projet.polytech.airejeux.dto.ReservationUpdateStatusDto;
+import projet.polytech.airejeux.exception.BadRequestException;
+import projet.polytech.airejeux.exception.ForbiddenException;
+import projet.polytech.airejeux.exception.ReservationException;
+import projet.polytech.airejeux.exception.ResourceNotFoundException;
 import projet.polytech.airejeux.mapper.ReservationMapper; // Mapper
 import projet.polytech.airejeux.utils.ReservationStatus;
-import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
-import java.util.stream.Collectors; // Pour mapper les listes
 
 @Service
 public class ReservationService {
@@ -25,22 +27,22 @@ public class ReservationService {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
     @Autowired
-    private JeuxRepository jeuxRepository; 
+    private JeuxRepository jeuxRepository;
 
     @Transactional
     public Reservation createReservation(ReservationRequestDto dto, String username) {
         Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "username", username));
 
         if (!jeuxRepository.existsById(dto.getJeuxId())) {
-            throw new EntityNotFoundException("Jeu non trouvé avec l'id : " + dto.getJeuxId());
+            throw new ResourceNotFoundException("Jeux", "id", dto.getJeuxId());
         }
 
         // Utilisation du Mapper pour créer l'entité
         Reservation reservation = ReservationMapper.toEntity(dto, utilisateur);
-        
+
         // Logique métier : le service définit le statut
-        reservation.setStatus(ReservationStatus.PENDING); 
+        reservation.setStatus(ReservationStatus.PENDING);
 
         reservation.setReservation(0);
 
@@ -49,30 +51,30 @@ public class ReservationService {
 
     public List<Reservation> getMyReservations(String username) {
         Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "username", username));
+
         return reservationRepository.findByUtilisateurId(utilisateur.getId());
     }
 
     @Transactional
     public Reservation cancelMyReservation(Long reservationId, String username) {
         Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", "username", username));
+
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new EntityNotFoundException("Réservation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation", "id", reservationId));
 
         if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
-            throw new SecurityException("Accès non autorisé à cette réservation");
+            throw new ForbiddenException("Vous n'êtes pas autorisé à annuler cette réservation");
         }
 
-        if (reservation.getStatus().equals(ReservationStatus.APPROVED) || 
-            reservation.getStatus().equals(ReservationStatus.PENDING)) {
-            
+        if (reservation.getStatus().equals(ReservationStatus.APPROVED) ||
+                reservation.getStatus().equals(ReservationStatus.PENDING)) {
+
             reservation.setStatus(ReservationStatus.CANCELLED);
             return reservationRepository.save(reservation);
         } else {
-            throw new IllegalStateException("Impossible d'annuler une réservation déjà " + reservation.getStatus());
+            throw new ReservationException("Impossible d'annuler une réservation déjà " + reservation.getStatus());
         }
     }
 
@@ -85,10 +87,11 @@ public class ReservationService {
     @Transactional
     public Reservation updateReservationStatus(Long reservationId, ReservationUpdateStatusDto dto) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new EntityNotFoundException("Réservation non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation", "id", reservationId));
 
         if (!reservation.getStatus().equals(ReservationStatus.PENDING)) {
-            throw new IllegalStateException("Cette réservation n'est plus en attente.");
+            throw new ReservationException(
+                    "Cette réservation n'est plus en attente (statut actuel : " + reservation.getStatus() + ")");
         }
 
         String newStatus = dto.getStatus().toUpperCase();
@@ -96,7 +99,8 @@ public class ReservationService {
             reservation.setStatus(newStatus);
             return reservationRepository.save(reservation);
         } else {
-            throw new IllegalArgumentException("Statut invalide : " + newStatus);
+            throw new BadRequestException(
+                    "Statut invalide : " + newStatus + ". Statuts autorisés : APPROVED, REJECTED");
         }
     }
 }
