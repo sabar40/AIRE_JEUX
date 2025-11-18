@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import projet.polytech.airejeux.dto.ErrorResponse;
 
 import java.time.LocalDateTime;
@@ -190,6 +191,84 @@ public class GlobalExceptionHandler {
         request.getRequestURI());
 
     return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+  }
+
+  /**
+   * Gère les exceptions de réservation (400)
+   */
+  @ExceptionHandler(ReservationException.class)
+  public ResponseEntity<ErrorResponse> handleReservationException(
+      ReservationException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Gère les exceptions IllegalStateException (400)
+   * Utilisées dans le code existant pour les erreurs de logique métier
+   */
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalStateException(
+      IllegalStateException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Gère les exceptions IllegalArgumentException (400)
+   */
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+      IllegalArgumentException ex,
+      HttpServletRequest request) {
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        ex.getMessage(),
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+  }
+
+  /**
+   * Gère les erreurs de type de paramètre (400)
+   * Par exemple : /api/jeux/abc au lieu de /api/jeux/123
+   */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleTypeMismatchException(
+      MethodArgumentTypeMismatchException ex,
+      HttpServletRequest request) {
+
+    String message = String.format("Le paramètre '%s' doit être de type %s",
+        ex.getName(),
+        ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "inconnu");
+
+    ErrorResponse error = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.BAD_REQUEST.value(),
+        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        message,
+        request.getRequestURI());
+
+    return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
   }
 
   
