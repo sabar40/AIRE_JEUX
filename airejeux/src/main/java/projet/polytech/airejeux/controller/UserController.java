@@ -1,7 +1,6 @@
 package projet.polytech.airejeux.controller;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -47,11 +46,8 @@ public class UserController {
     // Récupérer un utilisateur par ID
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-
-        return utilisateurService.getUserById(id)
-                .map(userMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Utilisateur user = utilisateurService.getUserById(id);
+        return ResponseEntity.ok(userMapper.toDTO(user));
     }
 
     // Récupérer tous les utilisateurs
@@ -66,13 +62,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
 
-        Optional<Utilisateur> existingUser = utilisateurService.getUserById(id);
-
-        if (existingUser.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Utilisateur user = existingUser.get();
+        Utilisateur user = utilisateurService.getUserById(id);
         user.setUsername(userDTO.getUsername());
         user.setPassword(userDTO.getPassword());
         user.setNom(userDTO.getNom());
@@ -88,11 +78,6 @@ public class UserController {
     // Suppression d'un utilisateur
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-
-        if (utilisateurService.getUserById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
         utilisateurService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
