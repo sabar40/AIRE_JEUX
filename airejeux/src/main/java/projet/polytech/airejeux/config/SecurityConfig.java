@@ -6,57 +6,49 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Import de BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder; // Import du PasswordEncoder
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    // Injection du JwtFilter via le constructeur
-    public SecurityConfig(JwtFilter jwtFilter) {
+    public SecurityConfig(JwtFilter jwtFilter, CorsConfigurationSource corsConfigurationSource) {
         this.jwtFilter = jwtFilter;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
-    // Déclaration explicite du AuthenticationManager
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // Bean PasswordEncoder
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Déclaration de BCryptPasswordEncoder
+        return new BCryptPasswordEncoder();
     }
 
-    // Définir SecurityFilterChain au lieu de WebSecurityConfigurerAdapter
-   @Bean
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Désactiver CSRF (la nouvelle façon)
-            .csrf(csrf -> csrf.disable())
-            
-            // 2. Définir la gestion de session sur STATELESS (crucial pour le JWT)
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            
-            // 3. Remplacer "authorizeRequests()" par "authorizeHttpRequests()"
-            .authorizeHttpRequests(auth -> auth
-                // Vos règles (inchangées)
-                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() 
-                .anyRequest().authenticated()
-            )
-            
-            // 4. Ajouter votre filtre (inchangé)
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
