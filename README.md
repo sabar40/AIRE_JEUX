@@ -43,7 +43,7 @@ API REST pour la gestion d'une aire de jeux permettant aux utilisateurs de consu
 - ✅ Codes HTTP appropriés (404, 401, 403, 409, 500, etc.)
 - ✅ Logging des erreurs avec SLF4J
 
-## ��️ Architecture
+## Architecture
 
 \`\`\`
 ┌─────────────┐
@@ -135,42 +135,33 @@ cd AIRE_JEUX/airejeux
 
 ### 2. Configurer la base de données
 
-\`\`\`bash
-# Se connecter à MariaDB
+Cette étape prépare la base de données pour l'application.
+
+**a. Se connecter à MariaDB**
+
+Connectez-vous à votre instance MariaDB avec un utilisateur ayant les droits de création de base de données (par exemple, `root`).
+
+```bash
 sudo mysql -u root -p
+```
 
-# Créer la base de données
+**b. Créer la base de données**
+
+Une fois connecté, exécutez la commande suivante pour créer la base de données, puis quittez le client `mysql`.
+
+```sql
 CREATE DATABASE AireJeux CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# Créer un utilisateur (optionnel)
-CREATE USER 'airejeux_user'@'localhost' IDENTIFIED BY 'votre_mot_de_passe';
-GRANT ALL PRIVILEGES ON AireJeux.* TO 'airejeux_user'@'localhost';
-FLUSH PRIVILEGES;
 EXIT;
-\`\`\`
+```
 
-### 3. Importer le schéma de la base de données
+**c. Importer le schéma**
 
-\`\`\`bash
+Après avoir créé la base de données, importez sa structure en exécutant cette commande depuis votre terminal (pas dans le client `mysql`).
+
+```bash
 mysql -u root -p AireJeux < src/main/resources/airejeux_structure_complete.sql
-\`\`\`
-
-### 4. Configurer l'application
-
-Modifier `src/main/resources/application.properties` :
-
-\`\`\`properties
-# Base de données
-spring.datasource.url=jdbc:mariadb://localhost:3306/AireJeux
-spring.datasource.username=root
-spring.datasource.password=votre_mot_de_passe
-
-# JWT Secret (IMPORTANT : Changer en production !)
-jwt.secret=VotreCleSecreteTresLongueEtComplexePourLaProduction123456789
-jwt.expiration=3600000
-\`\`\`
-
-### 5. Compiler et lancer l'application
+```
+### 4. Compiler et lancer l'application
 
 \`\`\`bash
 # Compiler le projet
