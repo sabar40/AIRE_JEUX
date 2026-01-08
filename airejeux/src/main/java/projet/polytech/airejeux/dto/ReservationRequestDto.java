@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
-public class ReservationRequestDto { // Le nom de la classe doit correspondre au nom du fichier
+public class ReservationRequestDto { // Le nom de la classe doit correspondre au nom du fichier'
     private Long jeuxId;
     private LocalDate bookingDate;
     private LocalTime startTime;
