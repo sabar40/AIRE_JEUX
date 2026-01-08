@@ -1,5 +1,6 @@
 package projet.polytech.airejeux.mapper;
 
+import projet.polytech.airejeux.Entity.Jeux;
 import projet.polytech.airejeux.Entity.Reservation;
 import projet.polytech.airejeux.Entity.Utilisateur;
 import projet.polytech.airejeux.dto.ReservationRequestDto;
@@ -26,7 +27,7 @@ public class ReservationMapper {
     /**
      * Convertit une Entité Reservation en DTO de Réponse
      */
-    public static ReservationResponseDto toDto(Reservation entity) {
+    public static ReservationResponseDto toDto(Reservation entity, Jeux jeux) {
         ReservationResponseDto dto = new ReservationResponseDto();
         dto.setId(entity.getId());
         dto.setJeuxId(entity.getJeuxId());
@@ -36,12 +37,18 @@ public class ReservationMapper {
         dto.setQuantity(entity.getQuantity());
         dto.setStatus(entity.getStatus());
         dto.setNotes(entity.getNotes());
-        
+
         // Ajouter les infos de l'utilisateur
         if (entity.getUtilisateur() != null) {
             dto.setUtilisateurId(entity.getUtilisateur().getId());
             dto.setUtilisateurUsername(entity.getUtilisateur().getUsername());
         }
+
+        // Ajouter le nom du jeu
+        if (jeux != null) {
+            dto.setJeuxNom(jeux.getNom());
+        }
+
         return dto;
     }
 }

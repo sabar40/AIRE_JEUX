@@ -5,7 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize; // Nécessite @EnableMethodSecurity
 import org.springframework.web.bind.annotation.*;
+import projet.polytech.airejeux.Entity.Jeux;
 import projet.polytech.airejeux.Entity.Reservation;
+import projet.polytech.airejeux.Repository.JeuxRepository;
 import projet.polytech.airejeux.Service.ReservationService;
 import projet.polytech.airejeux.dto.ReservationRequestDto;
 import projet.polytech.airejeux.dto.ReservationResponseDto; // DTO de réponse
@@ -25,6 +27,9 @@ public class ReservationController {
     @Autowired
     private ReservationService reservationService;
 
+    @Autowired
+    private JeuxRepository jeuxRepository;
+
     // --- Endpoints pour UTILISATEURS connectés (USER et ADMIN) ---
 
     @PostMapping
@@ -34,8 +39,8 @@ public class ReservationController {
             Principal principal) {
 
         Reservation nouvelleReservation = reservationService.createReservation(dto, principal.getName());
-        // On convertit l'entité en DTO de réponse
-        ReservationResponseDto responseDto = ReservationMapper.toDto(nouvelleReservation);
+        Jeux jeux = jeuxRepository.findById(nouvelleReservation.getJeuxId()).orElse(null);
+        ReservationResponseDto responseDto = ReservationMapper.toDto(nouvelleReservation, jeux);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
@@ -43,9 +48,11 @@ public class ReservationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ReservationResponseDto>> getMyReservations(Principal principal) {
         List<Reservation> reservations = reservationService.getMyReservations(principal.getName());
-        // On convertit la liste d'entités en liste de DTOs
         List<ReservationResponseDto> dtos = reservations.stream()
-                .map(ReservationMapper::toDto)
+                .map(r -> {
+                    Jeux jeux = jeuxRepository.findById(r.getJeuxId()).orElse(null);
+                    return ReservationMapper.toDto(r, jeux);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -54,7 +61,8 @@ public class ReservationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ReservationResponseDto> cancelMyReservation(@PathVariable Long id, Principal principal) {
         Reservation reservation = reservationService.cancelMyReservation(id, principal.getName());
-        return ResponseEntity.ok(ReservationMapper.toDto(reservation));
+        Jeux jeux = jeuxRepository.findById(reservation.getJeuxId()).orElse(null);
+        return ResponseEntity.ok(ReservationMapper.toDto(reservation, jeux));
     }
 
     // --- Endpoints pour ADMINS ---
@@ -64,7 +72,10 @@ public class ReservationController {
     public ResponseEntity<List<ReservationResponseDto>> getPendingReservations() {
         List<Reservation> reservations = reservationService.getReservationsByStatus(ReservationStatus.PENDING);
         List<ReservationResponseDto> dtos = reservations.stream()
-                .map(ReservationMapper::toDto)
+                .map(r -> {
+                    Jeux jeux = jeuxRepository.findById(r.getJeuxId()).orElse(null);
+                    return ReservationMapper.toDto(r, jeux);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -76,6 +87,7 @@ public class ReservationController {
             @RequestBody ReservationUpdateStatusDto dto) {
 
         Reservation reservation = reservationService.updateReservationStatus(id, dto);
-        return ResponseEntity.ok(ReservationMapper.toDto(reservation));
+        Jeux jeux = jeuxRepository.findById(reservation.getJeuxId()).orElse(null);
+        return ResponseEntity.ok(ReservationMapper.toDto(reservation, jeux));
     }
 }

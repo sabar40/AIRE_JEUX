@@ -8,8 +8,9 @@ import java.time.LocalTime;
 public class ReservationResponseDto { // Le nom de la classe est correct
     private Long id;
     private Long utilisateurId;
-    private String utilisateurUsername; 
+    private String utilisateurUsername;
     private Long jeuxId;
+    private String jeuxNom; // Nom du jeu réservé
     private LocalDate bookingDate;
     private LocalTime startTime;
     private LocalTime endTime;
