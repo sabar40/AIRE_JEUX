@@ -1,6 +1,18 @@
-# AIRE_JEUX - API de Gestion des Jeux et Réservations
+# AIRE_JEUX - Système de Gestion des Aires de Jeux
 
-API REST pour la gestion d'une aire de jeux permettant aux utilisateurs de consulter les équipements disponibles et de créer des réservations.
+Application complète (Backend Spring Boot + Frontend Angular) pour la gestion d'aires de jeux permettant aux utilisateurs de consulter les équipements disponibles, créer des réservations, et aux administrateurs de gérer le système.
+
+## 🔑 Compte Administrateur Pré-configuré
+
+Pour accéder au panel d'administration, utilisez les identifiants suivants :
+
+```
+Username: christ_t
+Password: [mot de passe fourni par l'équipe]
+Role: ADMIN
+```
+
+**Note :** Le compte administrateur est déjà créé dans la base de données. Les utilisateurs normaux peuvent s'inscrire via `/register` avec le rôle `USER` automatiquement assigné.
 
 ## 📋 Table des matières
 
@@ -368,12 +380,12 @@ airejeux/
 
 ### Bonnes pratiques implémentées
 
-✅ Hachage BCrypt des mots de passe  
-✅ Authentification JWT stateless  
-✅ Validation des entrées utilisateur  
-✅ Gestion des rôles (RBAC)  
-✅ Protection CSRF désactivée (API REST)  
-✅ Gestion centralisée des exceptions  
+✅ Hachage BCrypt des mots de passe
+✅ Authentification JWT stateless
+✅ Validation des entrées utilisateur
+✅ Gestion des rôles (RBAC)
+✅ Protection CSRF désactivée (API REST)
+✅ Gestion centralisée des exceptions
 
 ## 📊 Modèle de données
 
