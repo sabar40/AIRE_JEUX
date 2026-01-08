@@ -78,19 +78,46 @@ mysql -u airejeux -pairejeux123 airejeux_db < src/main/resources/airejeux_struct
 ```
 
 3. **Configuration** (`src/main/resources/application.properties`)
+
+Vérifier/modifier la configuration selon votre environnement :
 ```properties
 spring.datasource.url=jdbc:mariadb://localhost:3306/airejeux_db?serverTimezone=Europe/Paris
 spring.datasource.username=airejeux
 spring.datasource.password=airejeux123
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDBDialect
 spring.jpa.properties.hibernate.jdbc.time_zone=Europe/Paris
 ```
 
-4. **Démarrer l'application**
+4. **Compiler et démarrer l'application**
+
+Option 1 : Avec Maven Wrapper (recommandé)
 ```bash
+./mvnw clean install
 ./mvnw spring-boot:run
 ```
 
+Option 2 : Avec Maven global
+```bash
+mvn clean install
+mvn spring-boot:run
+```
+
+Option 3 : Via JAR compilé
+```bash
+./mvnw clean package
+java -jar target/airejeux-0.0.1-SNAPSHOT.jar
+```
+
 L'API sera accessible sur `http://localhost:8080`
+
+**Vérifier le démarrage :**
+```bash
+curl http://localhost:8080/api/jeux
+```
 
 ## 🏗️ Structure du Projet
 
