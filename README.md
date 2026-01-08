@@ -1,435 +1,224 @@
-# AIRE_JEUX - Système de Gestion des Aires de Jeux
+# 🎮 AireJeux - Backend API
 
-Application complète (Backend Spring Boot + Frontend Angular) pour la gestion d'aires de jeux permettant aux utilisateurs de consulter les équipements disponibles, créer des réservations, et aux administrateurs de gérer le système.
+API REST Spring Boot pour la gestion et la réservation d'aires de jeux à Tours.
 
-## 🔑 Compte Administrateur Pré-configuré
+## 📋 Description
 
-Pour accéder au panel d'administration, utilisez les identifiants suivants :
-
-```
-Username: christ_t
-Password: [mot de passe fourni par l'équipe]
-Role: ADMIN
-```
-
-**Note :** Le compte administrateur est déjà créé dans la base de données. Les utilisateurs normaux peuvent s'inscrire via `/register` avec le rôle `USER` automatiquement assigné.
-
-## 📋 Table des matières
-
-- [Fonctionnalités](#-fonctionnalités)
-- [Architecture](#-architecture)
-- [Technologies](#-technologies)
-- [Prérequis](#-prérequis)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Utilisation](#-utilisation)
-- [API Endpoints](#-api-endpoints)
-- [Gestion des erreurs](#-gestion-des-erreurs)
-- [Tests](#-tests)
-- [Structure du projet](#-structure-du-projet)
-- [Sécurité](#-sécurité)
-- [Contributeurs](#-contributeurs)
+Backend de la plateforme AireJeux fournissant une API RESTful sécurisée avec JWT pour la gestion des jeux, réservations et utilisateurs. L'API gère l'authentification, les autorisations par rôle, et la logique métier complète.
 
 ## ✨ Fonctionnalités
 
-### 🔐 Authentification & Autorisation
-- ✅ Inscription et connexion des utilisateurs
-- ✅ Authentification JWT (JSON Web Token)
-- ✅ Gestion des rôles (`USER`, `ADMIN`)
-- ✅ Sécurisation des endpoints avec Spring Security
+### 🔐 Authentification & Sécurité
+- **JWT Authentication** avec tokens Bearer
+- Extraction automatique du rôle depuis le JWT (ROLE_USER, ROLE_ADMIN)
+- Guards par endpoint avec `@PreAuthorize`
+- BCrypt pour le hachage des mots de passe
+- Configuration CORS pour le frontend
 
 ### 🎯 Gestion des Jeux
-- ✅ CRUD complet des équipements de jeux
-- ✅ Localisation GPS (coordonnées géographiques)
-- ✅ Accès public en lecture, modification réservée aux admins
+- CRUD complet des jeux (Create, Read, Update, Delete)
+- Stockage des coordonnées GPS (latitude, longitude)
+- Validation des données avec DTOs
+- Repository JPA/Hibernate
 
-### 📅 Système de Réservations
-- ✅ Création de réservations par les utilisateurs
-- ✅ Workflow de validation : `PENDING` → `APPROVED` / `REJECTED` / `CANCELLED`
-- ✅ Gestion des conflits (impossible de supprimer un jeu avec réservations actives)
-- ✅ Historique des réservations par utilisateur
+### 📅 Gestion des Réservations
+- Création de réservations avec date, heure et quantité
+- Statuts : PENDING, APPROVED, REJECTED, CANCELLED
+- Validation métier :
+  - Vérification existence du jeu
+  - Contrôle du propriétaire pour annulation
+  - Validation des transitions de statut
+- Endpoints admin pour validation
+- Enrichissement automatique avec le nom du jeu
 
-### 🛡️ Gestion des Exceptions
-- ✅ Handler global centralisé (`@RestControllerAdvice`)
-- ✅ Réponses d'erreur standardisées (format JSON uniforme)
-- ✅ Codes HTTP appropriés (404, 401, 403, 409, 500, etc.)
-- ✅ Logging des erreurs avec SLF4J
-
-## Architecture
-
-\`\`\`
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │ HTTP/JSON + JWT
-       ▼
-┌─────────────────────────────────────┐
-│         Controllers                  │
-│  (AuthController, JeuxController,   │
-│   ReservationController, etc.)      │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│      Security Layer                  │
-│  (JwtFilter, SecurityConfig)        │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│         Services                     │
-│  (JeuxService, ReservationService,  │
-│   UtilisateurService)               │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│       Repositories (JPA)            │
-│  (JeuxRepository, etc.)             │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│      MariaDB Database               │
-│  (Tables: utilisateur, jeux,        │
-│   coordonnees, reservation)         │
-└─────────────────────────────────────┘
-\`\`\`
-
-### Pattern : Clean Architecture
-- **Controllers** : Gestion des requêtes HTTP
-- **Services** : Logique métier
-- **Repositories** : Accès aux données
-- **DTOs** : Transfert de données entre couches
-- **Mappers** : Conversion Entity ↔ DTO (MapStruct)
+### 👥 Gestion des Utilisateurs
+- Inscription avec rôles (USER/ADMIN)
+- Compte admin pré-créé : `admin1` / `admin123`
+- Profils utilisateurs complets
 
 ## 🛠️ Technologies
 
-### Backend
-- **Java 17** - Langage de programmation
-- **Spring Boot 3.5.6** - Framework principal
-- **Spring Security** - Authentification et autorisation
-- **Spring Data JPA** - ORM et accès aux données
-- **Hibernate** - Implémentation JPA
+- **Framework** : Spring Boot 3.5.6
+- **Java** : 22
+- **Base de données** : MariaDB 10.6.22
+- **ORM** : JPA/Hibernate
+- **Sécurité** : Spring Security + JWT (HS512)
+- **Build** : Maven
+- **Validation** : Hibernate Validator
 
-### Sécurité
-- **JWT (jjwt 0.11.5)** - Tokens d'authentification
-- **BCrypt** - Hachage des mots de passe
+## 📦 Installation
 
-### Base de données
-- **MariaDB** - SGBD relationnel
-- **HikariCP** - Pool de connexions
+### Prérequis
 
-### Mapping & Validation
-- **MapStruct 1.5.5** - Mapping automatique Entity/DTO
-- **Lombok** - Réduction du boilerplate
+- Java 22+
+- Maven 3.8+
+- MariaDB 10.6+
 
-### Build & Tests
-- **Maven** - Gestion des dépendances
-- **JUnit 5** - Tests unitaires
-- **Mockito** - Framework de mocking
+### Configuration
 
-## 📦 Prérequis
-
-- **Java Development Kit (JDK) 17+**
-- **Maven 3.6+**
-- **MariaDB 10.5+** (ou MySQL 8.0+)
-- **Git**
-
-## 🚀 Installation
-
-### 1. Cloner le repository
-
-\`\`\`bash
+1. **Cloner le repository**
+```bash
 git clone https://github.com/sabar40/AIRE_JEUX.git
-cd AIRE_JEUX/airejeux
-\`\`\`
-
-### 2. Configurer la base de données
-
-Cette étape prépare la base de données pour l'application.
-
-**a. Se connecter à MariaDB**
-
-Connectez-vous à votre instance MariaDB avec un utilisateur ayant les droits de création de base de données (par exemple, `root`).
-
-```bash
-sudo mysql -u root -p
+cd airejeux
 ```
 
-**b. Créer la base de données**
+2. **Configurer la base de données**
 
-Une fois connecté, exécutez la commande suivante pour créer la base de données, puis quittez le client `mysql`.
-
+Créer la base de données :
 ```sql
-CREATE DATABASE AireJeux CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
+CREATE DATABASE airejeux_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'airejeux'@'localhost' IDENTIFIED BY 'airejeux123';
+GRANT ALL PRIVILEGES ON airejeux_db.* TO 'airejeux'@'localhost';
+FLUSH PRIVILEGES;
 ```
 
-**c. Importer le schéma**
-
-Après avoir créé la base de données, importez sa structure en exécutant cette commande depuis votre terminal (pas dans le client `mysql`).
-
+Importer le schéma :
 ```bash
-mysql -u root -p AireJeux < src/main/resources/airejeux_structure_complete.sql
+mysql -u airejeux -pairejeux123 airejeux_db < src/main/resources/airejeux_structure_complete.sql
 ```
-### 4. Compiler et lancer l'application
 
-\`\`\`bash
-# Compiler le projet
-./mvnw clean compile
+3. **Configuration** (`src/main/resources/application.properties`)
+```properties
+spring.datasource.url=jdbc:mariadb://localhost:3306/airejeux_db?serverTimezone=Europe/Paris
+spring.datasource.username=airejeux
+spring.datasource.password=airejeux123
+spring.jpa.properties.hibernate.jdbc.time_zone=Europe/Paris
+```
 
-# Lancer l'application
+4. **Démarrer l'application**
+```bash
 ./mvnw spring-boot:run
-\`\`\`
-
-L'API sera accessible sur : **http://localhost:8080**
-
-
-## 📖 Utilisation
-
-### Workflow typique
-
-1. **S'inscrire** (POST `/api/auth/register`)
-2. **Se connecter** (POST `/api/auth/login`) → Récupérer le JWT
-3. **Consulter les jeux** (GET `/api/jeux`) - Public
-4. **Créer une réservation** (POST `/api/reservations`) - Authentifié
-5. **Admin approuve** (PUT `/api/reservations/{id}/status`) - Admin uniquement
-
-### Exemple avec curl
-
-```bash
-# 1. Inscription
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "john_doe",
-    "password": "SecurePass123",
-    "nom": "Doe",
-    "prenom": "John",
-    "mail": "john@example.com",
-    "role": "USER"
-  }'
-
-# 2. Connexion (récupérer le token)
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "john_doe",
-    "password": "SecurePass123"
-  }')
-
-# 3. Consulter les jeux
-curl -X GET http://localhost:8080/api/jeux \
-  -H "Authorization: Bearer $TOKEN"
-
-# 4. Créer une réservation
-curl -X POST http://localhost:8080/api/reservations \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jeuxId": 1,
-    "utilisateurId": 1,
-    "dateDebut": "2025-12-01T10:00:00",
-    "dateFin": "2025-12-01T12:00:00"
-  }'
 ```
 
-## 🌐 API Endpoints
+L'API sera accessible sur `http://localhost:8080`
 
-### 🔐 Authentification
+## 🏗️ Structure du Projet
 
-| Méthode | Endpoint | Description | Auth |
-|---------|----------|-------------|------|
-| POST | `/api/auth/register` | Inscription d'un utilisateur | Public |
-| POST | `/api/auth/login` | Connexion (retourne JWT) | Public |
+```
+src/main/java/projet/polytech/airejeux/
+├── AirejeuxApplication.java       # Point d'entrée
+├── config/
+│   └── SecurityConfig.java        # Configuration Spring Security
+├── controller/                     # Contrôleurs REST
+│   ├── AuthController.java        # Login/Register
+│   ├── JeuxController.java        # CRUD Jeux
+│   ├── ReservationController.java # Gestion réservations
+│   └── UserController.java        # Gestion utilisateurs
+├── dto/                           # Data Transfer Objects
+│   ├── JeuxRequestDto.java
+│   ├── JeuxResponseDto.java
+│   ├── ReservationRequestDto.java
+│   ├── ReservationResponseDto.java
+│   └── UserDTO.java
+├── Entity/                        # Entités JPA
+│   ├── Coordonnees.java
+│   ├── Jeux.java
+│   ├── Reservation.java
+│   └── Utilisateur.java
+├── exception/                     # Gestion des exceptions
+│   ├── GlobalExceptionHandler.java  # @RestControllerAdvice
+│   ├── ResourceNotFoundException.java
+│   ├── BadRequestException.java
+│   └── ...
+├── mapper/                        # Conversions Entity ↔ DTO
+│   ├── JeuxMapper.java
+│   ├── ReservationMapper.java
+│   └── UtilisateurMapper.java
+├── Repository/                    # Repositories JPA
+│   ├── JeuxRepository.java
+│   ├── ReservationRepository.java
+│   └── UtilisateurRepository.java
+├── security/                      # Sécurité JWT
+│   └── JwtFilter.java            # Extraction JWT + Authorities
+├── Service/                       # Logique métier
+│   ├── JeuxService.java
+│   ├── JwtService.java
+│   ├── ReservationService.java
+│   └── UtilisateurService.java
+└── utils/
+    └── ReservationStatus.java    # Constantes de statut
+```
 
-### 🎮 Jeux
+## 🔌 Endpoints API
 
-| Méthode | Endpoint | Description | Auth |
-|---------|----------|-------------|------|
-| GET | `/api/jeux` | Liste tous les jeux | Public |
-| GET | `/api/jeux/{id}` | Récupère un jeu par ID | Public |
-| POST | `/api/jeux` | Crée un nouveau jeu | ADMIN |
-| PUT | `/api/jeux/{id}` | Modifie un jeu | ADMIN |
-| DELETE | `/api/jeux/{id}` | Supprime un jeu | ADMIN |
+### 🔓 Public
 
-### 📅 Réservations
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/auth/login` | Connexion (retourne JWT) |
+| POST | `/api/auth/register` | Inscription |
+| GET | `/api/jeux` | Liste tous les jeux |
 
-| Méthode | Endpoint | Description | Auth |
-|---------|----------|-------------|------|
-| GET | `/api/reservations` | Liste toutes les réservations | ADMIN |
-| GET | `/api/reservations/{id}` | Détails d'une réservation | USER |
-| GET | `/api/reservations/user/{userId}` | Réservations d'un utilisateur | USER |
-| POST | `/api/reservations` | Crée une réservation | USER |
-| PUT | `/api/reservations/{id}/status` | Change le statut | ADMIN |
-| DELETE | `/api/reservations/{id}` | Annule une réservation | USER/ADMIN |
+### 🔐 Authentifié (USER)
 
-### 👤 Utilisateurs
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/reservations` | Créer une réservation |
+| GET | `/api/reservations/my-reservations` | Mes réservations |
+| PATCH | `/api/reservations/{id}/cancel` | Annuler ma réservation |
 
-| Méthode | Endpoint | Description | Auth |
-|---------|----------|-------------|------|
-| GET | `/api/users` | Liste tous les utilisateurs | ADMIN |
-| GET | `/api/users/{id}` | Récupère un utilisateur | USER |
-| PUT | `/api/users/{id}` | Modifie un utilisateur | USER/ADMIN |
-| DELETE | `/api/users/{id}` | Supprime un utilisateur | ADMIN |
+### 👨‍💼 Admin uniquement
 
-## 🚨 Gestion des erreurs
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/jeux` | Créer un jeu |
+| PUT | `/api/jeux/{id}` | Modifier un jeu |
+| DELETE | `/api/jeux/{id}` | Supprimer un jeu |
+| GET | `/api/reservations/pending` | Réservations en attente |
+| PATCH | `/api/reservations/{id}/status` | Valider/Rejeter réservation |
 
-L'API utilise un système centralisé de gestion des exceptions avec des réponses standardisées.
+## 🔒 Authentification
 
-### Format de réponse d'erreur
+### Login
+```bash
+POST /api/auth/login
+Content-Type: application/json
 
-```json
 {
-  "timestamp": "2025-11-18T12:53:36",
-  "status": 404,
-  "error": "Not Found",
-  "message": "Jeux avec id '999' introuvable",
-  "path": "/api/jeux/999",
-  "validationErrors": []
+  "username": "admin1",
+  "password": "admin123"
 }
 ```
 
-### Codes HTTP
+## 📊 Schéma Base de Données
 
-| Code | Signification | Exemple |
-|------|--------------|---------|
-| 200 | Succès | Opération réussie |
-| 400 | Bad Request | Données invalides |
-| 401 | Unauthorized | Token manquant/invalide |
-| 403 | Forbidden | Permissions insuffisantes |
-| 404 | Not Found | Ressource introuvable |
-| 409 | Conflict | Conflit métier (duplication, etc.) |
-| 500 | Internal Server Error | Erreur serveur |
+### Tables Principales
 
-### Exceptions personnalisées
+- **utilisateur** : Gestion des comptes (username, password_hash, role)
+- **jeux** : Catalogue des équipements (nom, description, quantité, coordonnées)
+- **coordonnees** : Localisation GPS (latitude, longitude)
+- **reservation** : Réservations avec dates, heures, statut
 
-- `ResourceNotFoundException` (404)
-- `BadRequestException` (400)
-- `UnauthorizedException` (401)
-- `ForbiddenException` (403)
-- `ConflictException` (409)
-- `DuplicateResourceException` (409)
-- `InvalidTokenException` (401)
-- `ReservationException` (400)
+## ⚙️ Configuration Avancée
 
-## 🧪 Tests
+### Timezone
+Les dates/heures utilisent le fuseau Europe/Paris configuré dans :
+- `spring.datasource.url` : `?serverTimezone=Europe/Paris`
+- `spring.jpa.properties.hibernate.jdbc.time_zone=Europe/Paris`
 
-### Tests unitaires
+### JWT Secret
+La clé JWT est générée automatiquement (HS512, 512 bits) dans `JwtService.java`.
 
-```bash
-# Exécuter tous les tests
-./mvnw test
+### Gestion des Erreurs
+`GlobalExceptionHandler` avec `@RestControllerAdvice` retourne des erreurs structurées :
+- 400 : Bad Request
+- 401 : Unauthorized
+- 403 : Forbidden
+- 404 : Resource Not Found
 
-# Exécuter les tests d'un fichier spécifique
-./mvnw test -Dtest=GlobalExceptionHandlerTest
+## 👥 Contributors
 
-# Tests avec couverture
-./mvnw test jacoco:report
-```
+- **Christ Chadrak MVOUNGOU** - ccmvoungou@gmail.com
+- **Mariem Ejiewen** - [@Mounaejiwene](https://github.com/Mounaejiwene)
+- **Sidi Med SABAR** - [@sabar40](https://github.com/sabar40)
 
-### Tests d'intégration (avec BD)
+## 📄 Licence
 
-```bash
-# Script de tests curl
-chmod +x test-exceptions.sh
-./test-exceptions.sh
-```
-
-### Résultats attendus
-
-```
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
-BUILD SUCCESS ✅
-```
-
-## 📁 Structure du projet
-
-```
-airejeux/
-├── src/
-│   ├── main/
-│   │   ├── java/projet/polytech/airejeux/
-│   │   │   ├── config/              # Configuration (SecurityConfig)
-│   │   │   ├── controller/          # Contrôleurs REST
-│   │   │   ├── dto/                 # Data Transfer Objects
-│   │   │   ├── Entity/              # Entités JPA
-│   │   │   ├── exception/           # Exceptions personnalisées
-│   │   │   ├── mapper/              # Mappers MapStruct
-│   │   │   ├── Repository/          # Interfaces JPA
-│   │   │   ├── security/            # JWT Filter
-│   │   │   ├── Service/             # Logique métier
-│   │   │   ├── utils/               # Classes utilitaires
-│   │   │   └── AirejeuxApplication.java
-│   │   └── resources/
-│   │       ├── application.properties
-│   │       └── airejeux_structure_complete.sql
-│   └── test/
-│       └── java/projet/polytech/airejeux/
-│           ├── exception/           # Tests des exceptions
-│           └── AirejeuxApplicationTests.java
-├── target/                          # Build artifacts
-├── .gitignore
-├── pom.xml                          # Configuration Maven
-├── README.md
-└── test-exceptions.sh               # Script de tests curl
-```
-
-## 🔒 Sécurité
-
-### Bonnes pratiques implémentées
-
-✅ Hachage BCrypt des mots de passe
-✅ Authentification JWT stateless
-✅ Validation des entrées utilisateur
-✅ Gestion des rôles (RBAC)
-✅ Protection CSRF désactivée (API REST)
-✅ Gestion centralisée des exceptions
-
-## 📊 Modèle de données
-
-### Entités principales
-
-```
-Utilisateur (utilisateur)
-├── id: Long (PK)
-├── username: String (unique)
-├── password: String (hashed)
-├── nom: String
-├── prenom: String
-├── mail: String
-└── role: String (USER/ADMIN)
-
-Jeux (jeux)
-├── id: Long (PK)
-├── nom: String
-├── type: String
-├── description: String
-└── coordonnees_id: Long (FK → Coordonnees)
-
-Coordonnees (coordonnees)
-├── id: Long (PK)
-├── latitude: Double
-└── longitude: Double
-
-Reservation (reservation)
-├── id: Long (PK)
-├── jeux_id: Long (FK → Jeux)
-├── utilisateur_id: Long (FK → Utilisateur)
-├── dateDebut: DateTime
-├── dateFin: DateTime
-└── status: String (PENDING/APPROVED/REJECTED/CANCELLED)
-```
-
-### Relations
-
-- `Jeux` ↔ `Coordonnees` : OneToOne
-- `Reservation` → `Jeux` : ManyToOne
-- `Reservation` → `Utilisateur` : ManyToOne
-
-## 📄 License
-
-Ce projet est sous licence MIT.
+Ce projet est développé dans le cadre d'un projet académique à Polytech Tours.
 
 ---
+
+**Version** : 1.0.0  
+**Spring Boot** : 3.5.6  
+**Java** : 22  
+**API Documentation** : Consultez les controllers pour les spécifications détaillées
