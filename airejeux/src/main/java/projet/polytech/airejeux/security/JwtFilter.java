@@ -42,23 +42,22 @@ public class JwtFilter implements Filter {
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     if (jwtService.validateToken(token, username)) {
-                        
+
                         // --- MODIFICATION ICI ---
                         // 1. On extrait le rôle (ex: "ADMIN")
-                        String role = jwtService.extractRole(token); 
-                        
+                        String role = jwtService.extractRole(token);
+
                         // 2. On ajoute le préfixe "ROLE_" indispensable pour hasRole('ADMIN')
-                        String authorityName = "ROLE_" + role; 
-                        
+                        String authorityName = "ROLE_" + role;
+
                         // 3. On crée l'autorité Spring Security
                         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                                new SimpleGrantedAuthority(authorityName)
-                        );
+                                new SimpleGrantedAuthority(authorityName));
 
                         // 4. On passe les autorités au token d'authentification
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 username, null, authorities);
-                        
+
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                         // ------------------------
                     }
