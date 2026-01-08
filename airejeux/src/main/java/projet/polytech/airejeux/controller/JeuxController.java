@@ -82,6 +82,6 @@ public class JeuxController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteJeu(@PathVariable Long id) {
         jeuxService.deleteJeu(id);
-        return ResponseEntity.ok("Jeu (id: " + id + ") supprimé avec succès.");
+        return ResponseEntity.noContent().build();
     }
 }
