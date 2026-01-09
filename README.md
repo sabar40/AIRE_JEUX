@@ -64,18 +64,32 @@ cd airejeux
 
 2. **Configurer la base de données**
 
-Créer la base de données :
+Créer l'utilisateur MySQL (si besoin) :
 ```sql
-CREATE DATABASE airejeux_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'airejeux'@'localhost' IDENTIFIED BY 'airejeux123';
 GRANT ALL PRIVILEGES ON airejeux_db.* TO 'airejeux'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-Importer le schéma :
+Importer le schéma (le script crée la base, les tables et les données) :
 ```bash
-mysql -u airejeux -pairejeux123 airejeux_db < src/main/resources/airejeux_structure_complete.sql
+mysql -u airejeux -pairejeux123 < src/main/resources/airejeux_structure_complete.sql
 ```
+
+> **ℹ️ Astuce Windows**
+>
+> - Pour ouvrir un terminal MySQL sous Windows, utilisez l'invite de commandes (cmd) ou PowerShell :
+>   ```cmd
+>   mysql -u airejeux -p airejeux_db < src\main\resources\airejeux_structure_complete.sql
+>   ```
+>   (Remplacez les `/` par `\` dans les chemins sous Windows)
+>
+> - Pour copier le fichier de configuration exemple :
+>   ```cmd
+>   copy src\main\resources\application.properties.example src\main\resources\application.properties
+>   ```
+> - Si vous utilisez XAMPP/WAMP, vérifiez le port (souvent 3306 ou 3307) et adaptez `application.properties`.
+> - Si vous avez une erreur d'accès, vérifiez que l'utilisateur MySQL a bien les droits et que le service MariaDB est démarré.
 
 3. **Configuration** (`src/main/resources/application.properties`)
 ```properties
