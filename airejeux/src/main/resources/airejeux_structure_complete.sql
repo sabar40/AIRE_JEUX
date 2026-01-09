@@ -66,4 +66,4 @@ INSERT INTO `jeux`(id, nom, quantite, description, coordonnees_id) VALUES
 -- Password: admin123 (hash BCrypt généré par Spring Security)
 -- Role: ROLE_ADMIN
 INSERT INTO `utilisateur` (username, password, nom, prenom, mail, role) VALUES
-('admin1', '$2a$10$HjuX4bKF3XvFMWsZnWVz9ePSPs1Dse3D32j98uWb0UkC4Te5IuoZO', 'Administrateur', 'Système', 'admin@airejeux.fr', 'ROLE_ADMIN');
+('admin1', '$2a$10$HjuX4bKF3XvFMWsZnWVz9ePSPs1Dse3D32j98uWb0UkC4Te5IuoZO', 'Administrateur', 'Système', 'admin@airejeux.fr', 'ADMIN');
